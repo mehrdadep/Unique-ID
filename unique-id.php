@@ -16,14 +16,18 @@ Licence: GPLv2
 if (!defined('ABSPATH')) {
   exit;
 }
-add_action('plugins_loaded', 'unique_id_load_textdomain');
+
+/**
+* load text domain
+*/
 function unique_id_load_textdomain()
 {
   load_plugin_textdomain('unique-id', false, plugin_basename(dirname(__FILE__)) . '/language');
 }
+add_action('plugins_loaded', 'unique_id_load_textdomain');
 
 /*
- * register activation and deactivation hooks
+ * register activation hooks
  */
 function unique_id_activation()
 {
@@ -31,6 +35,9 @@ function unique_id_activation()
 }
 register_activation_hook(__FILE__, 'unique_id_activation');
 
+/*
+ * register deactivation hooks
+ */
 function unique_id_deactivation()
 {
   delete_option('unique_id_initial_id');
@@ -38,12 +45,21 @@ function unique_id_deactivation()
 }
 register_deactivation_hook(__FILE__, 'unique_id_deactivation');
 
+/**
+* set default base code in activation
+ */
 function unique_id_default_options()
 {
   if (false === get_option('unique_id_initial_base')) {
     add_option('unique_id_initial_base', unique_id_genrate_initial_base());
   }
 }
+
+/**
+* this needs jalali plugin to be activated
+* for georgian date use date() instead
+* @author MehrdadEP
+ */
 function unique_id_genrate_initial_base()
 {
   $year = ztjalali_english_num(jdate('y'));
@@ -51,6 +67,10 @@ function unique_id_genrate_initial_base()
   $base_code = $year . $month;
   return $base_code;
 }
+
+/**
+* create an option page for unique id
+ */
 function unique_id_register_options_page()
 {
   add_menu_page(
@@ -65,12 +85,20 @@ function unique_id_register_options_page()
 }
 add_action('admin_menu', 'unique_id_register_options_page');
 
+/**
+* register settings
+ */
 function unique_id_register_settings()
 {
   register_setting('unique_id_options_group', 'unique_id_initial_base');
 }
 add_action('admin_init', 'unique_id_register_settings');
 
+/**
+* option page content
+* contains setting a base code and generating a new user_login manually
+* @author MehrdadEP
+ */
 function unique_id_options_page()
 {
   ?>
@@ -108,6 +136,10 @@ function unique_id_options_page()
 
 }
 
+/**
+* create a link to generate new user_login using AJAX call
+* @author MehrdadEP
+ */
 function unique_id_generate_link()
 {
   if (is_admin()) {
@@ -125,8 +157,11 @@ function unique_id_generate_link()
 
 }
 }
-// add_action('edit_user_profile', 'unique_id_generate_link');
 
+/**
+* generate new user_login with ajax and json response
+* @author MehrdadEP
+*/
 function unique_id_generate_new_id()
 {
   $new_code = array();
@@ -145,6 +180,10 @@ function unique_id_enqueue_admin_script($hook)
 }
 add_action('admin_enqueue_scripts', 'unique_id_enqueue_admin_script');
 
+/**
+* @return string last 6 digit generated code
+* @author MehrdadEP
+*/
 function unique_id_get_last_code()
 {
   if (false === get_option('unique_id_last_code')) {
@@ -163,6 +202,11 @@ function unique_id_get_last_code()
   return get_option('unique_id_last_code');
 }
 
+/**
+* convert int last code to string
+* @return string
+* @author MehrdadEP
+*/
 function to_six_digit_string($int)
 {
   $result = '';
@@ -190,6 +234,12 @@ function to_six_digit_string($int)
   }
   return $result;
 }
+
+/**
+* generate new user_login and update options
+* @return string new user_login
+* @author MehrdadEP
+ */
 function unique_id_genrate_new_id()
 {
   $new_code = to_six_digit_string(unique_id_get_last_code());
@@ -204,8 +254,12 @@ function unique_id_genrate_new_id()
   return $new_id;
 }
 
-add_filter('pre_user_login', 'callback_function');
-function callback_function($login)
+/**
+* change user_login value on registration
+* @author MehrdadEP
+*/
+function unique_id_callback_function($login)
 {
   return unique_id_genrate_new_id();
 }
+add_filter('pre_user_login', 'unique_id_callback_function');
