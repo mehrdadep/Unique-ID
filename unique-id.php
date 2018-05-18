@@ -40,8 +40,9 @@ register_activation_hook(__FILE__, 'unique_id_activation');
  */
 function unique_id_deactivation()
 {
-  delete_option('unique_id_initial_id');
+  delete_option('unique_id_initial_base');
   delete_option('unique_id_last_code');
+  delete_option('unique_id_last_id');
 }
 register_deactivation_hook(__FILE__, 'unique_id_deactivation');
 
